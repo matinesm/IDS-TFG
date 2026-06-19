@@ -33,6 +33,7 @@ import os
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
 import numpy as np
 import pandas as pd
 
@@ -254,6 +255,35 @@ def plot_feature_importance(experiment, data, figsize=(10.5, 6)):
     print(f"-> Figure saved: {path}")
 
 
+def plot_feature_importance_exp1(data, figsize=(13, 6.5)):
+    """Side-by-side top-15 feature importances for Experiment 1 (NFstream),
+    without and with window features. Window features are highlighted."""
+    print("\nGenerating feature importance figure for Experiment 1 (NFstream)...")
+    panels = [
+        ("calibrated",             "Sin window features (63 características)"),
+        ("calibrated_with_window", "Con window features (66 características)"),
+    ]
+    fig, axes = plt.subplots(1, 2, figsize=figsize)
+    for ax, (key, title) in zip(axes, panels):
+        top_features = data.get(key, {}).get("top_features")
+        if top_features is None:
+            print(f"  [!] No 'top_features' under '{key}' - rerun experiment 1. Skipping panel.")
+            ax.set_visible(False); continue
+        feats  = list(top_features.keys())[::-1]
+        values = list(top_features.values())[::-1]
+        colors = ["darkorange" if f.startswith("win500_") else "steelblue" for f in feats]
+        ax.barh(feats, values, color=colors)
+        ax.set_title(title, fontsize=13, fontweight="bold")
+        ax.set_xlabel("Importancia", fontsize=12, fontweight="bold")
+        ax.xaxis.set_major_locator(MultipleLocator(0.05))
+        ax.tick_params(axis="x", labelsize=11)
+        ax.tick_params(axis="y", labelsize=11)
+    plt.tight_layout()
+    path = os.path.join(FIGURES_DIR, "fig_4_7_importancia_caracteristicas_exp1.png")
+    plt.savefig(path, dpi=150); plt.close()
+    print(f"-> Figure saved: {path}")
+
+
 CONFUSION_MATRIX_FIGURE_NUMBERS = {"experiment1": "4.1", "experiment2": "4.2", "experiment3": "4.3"}
 CONFUSION_MATRIX_FILENAMES = {
     "experiment1": "fig_4_1_matriz_confusion_exp1.png",
@@ -362,6 +392,7 @@ if __name__ == "__main__":
             continue
         if experiment == "experiment1":
             plot_class_balance(experiment, data)
+            plot_feature_importance_exp1(data)
         if experiment == "experiment3":
             plot_feature_importance(experiment, data)
         plot_confusion_matrix(experiment, data)
